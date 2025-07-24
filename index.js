@@ -10,7 +10,9 @@ const qrcode = require('qrcode'); // Use the 'qrcode' library
 // ... (This section remains the same) ...
 const app = express();
 const PORT = process.env.PORT || 3000;
-app.use(cors({ origin: 'http://localhost:5173' }));
+// This will use the URL from Render's environment, or localhost for local testing
+const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
+app.use(cors({ origin: allowedOrigin }));
 app.use(express.json());
 
 // --- 2. WhatsApp & Bot Configuration ---
