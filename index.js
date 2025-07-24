@@ -4,19 +4,31 @@ const { useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/bai
 const pino = require('pino');
 const express = require('express');
 const cors = require('cors');
-const qrcode = require('qrcode'); // Use the 'qrcode' library
+const qrcode = require('qrcode');
 
 // --- 1. Express App Setup ---
-// ... (This section remains the same) ...
 const app = express();
 const PORT = process.env.PORT || 3000;
-// This will use the URL from Render's environment, or localhost for local testing
-const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
-app.use(cors({ origin: allowedOrigin }));
+
+// ✅ THIS IS THE CORRECTED CORS CONFIGURATION
+// It reads a comma-separated list of URLs from your Render environment variables
+const allowedOriginsEnv = process.env.ALLOWED_ORIGINS || 'http://localhost:5173';
+const allowedOrigins = allowedOriginsEnv.split(',').map(origin => origin.trim());
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like Postman) or from our allowed list
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    }
+}));
 app.use(express.json());
 
+
 // --- 2. WhatsApp & Bot Configuration ---
-// ... (This section remains the same) ...
 let sock;
 const API_KEY = process.env.API_KEY;
 const WHATSAPP_GROUP_ID = process.env.WHATSAPP_GROUP_ID;
@@ -31,7 +43,6 @@ async function connectToWhatsApp() {
         logger: pino({ level: 'silent' }),
     });
 
-    // ... (messages.upsert listener remains the same) ...
     sock.ev.on('messages.upsert', m => {
         const msg = m.messages[0];
         if (msg.key.remoteJid && msg.key.remoteJid.endsWith('@g.us')) {
@@ -41,8 +52,6 @@ async function connectToWhatsApp() {
         }
     });
 
-
-    // ✅ THIS SECTION IS UPDATED TO GENERATE A URL
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect, qr } = update;
 
@@ -53,7 +62,7 @@ async function connectToWhatsApp() {
                 if (err) {
                     console.error('Failed to generate QR code data URL', err);
                 } else {
-                    console.log(url); // Log the Data URL
+                    console.log(url);
                 }
             });
             console.log('------------------------------------------------');
@@ -67,7 +76,6 @@ async function connectToWhatsApp() {
             }
         } else if (connection === 'open') {
             console.log('✅ WhatsApp connection opened!');
-            // ...
         }
     });
 
@@ -75,7 +83,6 @@ async function connectToWhatsApp() {
 }
 
 // --- 4. Webhook Endpoint ---
-// ... (This section remains the same) ...
 app.post('/incoming', async (req, res) => {
     console.log('Received request on /incoming:', req.body);
     const providedApiKey = req.headers['x-api-key'];
@@ -106,7 +113,6 @@ app.post('/incoming', async (req, res) => {
 
 
 // --- 5. Start Everything ---
-// ... (This section remains the same) ...
 if (!API_KEY) {
     console.error('FATAL ERROR: API_KEY environment variable is required.');
     process.exit(1);
