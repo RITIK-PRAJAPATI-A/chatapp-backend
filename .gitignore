@@ -5,4 +5,27 @@
 /auth_info_baileys/
 
 # Environment variables
+.env# Dependencies
+# This folder contains all the packages installed by npm and can be huge.
+# It should always be ignored and re-installed on the server.
+/node_modules
+
+# Environment Variables
+# This file contains your secret keys (API_KEY, WHATSAPP_GROUP_ID).
+# NEVER push this file to GitHub. This is a critical security step.
 .env
+
+# WhatsApp Session/Authentication Files
+# This folder contains your sensitive login credentials for WhatsApp.
+# It will be created on the Render server using a Persistent Disk.
+/auth_info_baileys
+
+# Log files
+# These are generated during debugging and don't need to be in the repository.
+logs
+*.log
+npm-debug.log*
+
+# OS generated files
+.DS_Store
+Thumbs.db
