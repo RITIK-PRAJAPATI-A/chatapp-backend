@@ -4,15 +4,17 @@ const { useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/bai
 const pino = require('pino');
 const express = require('express');
 const cors = require('cors');
-const qrcode = require('qrcode-terminal');
+const qrcode = require('qrcode'); // Use the 'qrcode' library
 
 // --- 1. Express App Setup ---
+// ... (This section remains the same) ...
 const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
 
 // --- 2. WhatsApp & Bot Configuration ---
+// ... (This section remains the same) ...
 let sock;
 const API_KEY = process.env.API_KEY;
 const WHATSAPP_GROUP_ID = process.env.WHATSAPP_GROUP_ID;
@@ -25,9 +27,9 @@ async function connectToWhatsApp() {
     sock = makeWASocket({
         auth: state,
         logger: pino({ level: 'silent' }),
-        // printQRInTerminal: true, // <-- This option is removed as it's deprecated
     });
 
+    // ... (messages.upsert listener remains the same) ...
     sock.ev.on('messages.upsert', m => {
         const msg = m.messages[0];
         if (msg.key.remoteJid && msg.key.remoteJid.endsWith('@g.us')) {
@@ -37,14 +39,21 @@ async function connectToWhatsApp() {
         }
     });
 
-    // ✅ THIS SECTION IS UPDATED TO MANUALLY PRINT THE QR CODE
+
+    // ✅ THIS SECTION IS UPDATED TO GENERATE A URL
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect, qr } = update;
 
         if (qr) {
             console.log('------------------------------------------------');
-            console.log('SCAN THE QR CODE BELOW');
-            qrcode.generate(qr, { small: true });
+            console.log('QR code received. Please open the link below in a browser to scan.');
+            qrcode.toDataURL(qr, (err, url) => {
+                if (err) {
+                    console.error('Failed to generate QR code data URL', err);
+                } else {
+                    console.log(url); // Log the Data URL
+                }
+            });
             console.log('------------------------------------------------');
         }
 
@@ -56,10 +65,7 @@ async function connectToWhatsApp() {
             }
         } else if (connection === 'open') {
             console.log('✅ WhatsApp connection opened!');
-            if (!WHATSAPP_GROUP_ID) {
-                console.log('\n🚨 WARNING: WHATSAPP_GROUP_ID is not set in your environment.');
-                console.log('To find the ID, send a message to your target group and look for the log above.');
-            }
+            // ...
         }
     });
 
@@ -67,31 +73,25 @@ async function connectToWhatsApp() {
 }
 
 // --- 4. Webhook Endpoint ---
+// ... (This section remains the same) ...
 app.post('/incoming', async (req, res) => {
-    // ... (This section remains the same) ...
     console.log('Received request on /incoming:', req.body);
-
     const providedApiKey = req.headers['x-api-key'];
     if (!API_KEY || providedApiKey !== API_KEY) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
-
     if (!sock || !WHATSAPP_GROUP_ID) {
         return res.status(503).json({ error: 'WhatsApp client not ready or Group ID not configured' });
     }
-
     const { text, user } = req.body;
     if (!text || !user) {
         return res.status(400).json({ error: 'Missing text or user field' });
     }
-
     const found = KEYWORDS.find(k => text.toLowerCase().includes(k.toLowerCase()));
     if (!found) {
         return res.status(200).json({ message: 'No keyword match' });
     }
-
     const alertMsg = `🚨 *${found.toUpperCase()}* from ${user}:\n\n${text}`;
-
     try {
         await sock.sendMessage(WHATSAPP_GROUP_ID, { text: alertMsg });
         console.log(`Alert sent to group ${WHATSAPP_GROUP_ID}`);
@@ -102,7 +102,9 @@ app.post('/incoming', async (req, res) => {
     }
 });
 
+
 // --- 5. Start Everything ---
+// ... (This section remains the same) ...
 if (!API_KEY) {
     console.error('FATAL ERROR: API_KEY environment variable is required.');
     process.exit(1);
