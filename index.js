@@ -32,7 +32,7 @@ app.use(express.json());
 let sock;
 const API_KEY = process.env.API_KEY;
 const WHATSAPP_GROUP_ID = process.env.WHATSAPP_GROUP_ID;
-const KEYWORDS = ['#prayer', '#prayer request'];
+const KEYWORDS = ['#prayer', '#prayer_request','#prayer_points','@prayer','@prayer_request','@prayer_points'];
 
 // --- 3. Baileys Connection Logic ---
 async function connectToWhatsApp() {
@@ -100,7 +100,7 @@ app.post('/incoming', async (req, res) => {
     if (!found) {
         return res.status(200).json({ message: 'No keyword match' });
     }
-    const alertMsg = `🚨 *${found.toUpperCase()}* from ${user}:\n\n${text}`;
+    const alertMsg = ` *${found.toUpperCase()}* :\n\n${text}`;
     try {
         await sock.sendMessage(WHATSAPP_GROUP_ID, { text: alertMsg });
         console.log(`Alert sent to group ${WHATSAPP_GROUP_ID}`);
