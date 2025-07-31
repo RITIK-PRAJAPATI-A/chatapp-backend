@@ -107,7 +107,7 @@ app.post('/incoming', async (req, res) => {
         res.json({ message: 'Alert sent' });
     } catch (err) {
         console.error('WhatsApp send error:', err);
-        res.status(500).json({ error: 'Failed to send alert' });
+        res.status(500).json({ error: 'Failed tosend alert' });
     }
 });
 
