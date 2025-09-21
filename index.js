@@ -43,15 +43,7 @@ async function connectToWhatsApp() {
     sock = makeWASocket({
         auth: state,
         logger: pino({ level: 'silent' }),
-        printQRInTerminal: false // We'll handle QR code display manually
-    });
-
-    // Listen for group messages (optional, good for debugging)
-    sock.ev.on('messages.upsert', m => {
-        const msg = m.messages[0];
-        if (msg.key.remoteJid && msg.key.remoteJid.endsWith('@g.us')) {
-            console.log(`\n--- GROUP MESSAGE RECEIVED ---\nGroup ID: ${msg.key.remoteJid}\n--------------------------\n`);
-        }
+        printQRInTerminal: false // We handle QR code display manually
     });
 
     // Handle connection updates
@@ -60,7 +52,7 @@ async function connectToWhatsApp() {
 
         if (qr) {
             console.log('QR code received, accessible at /qr endpoint.');
-            qrCodeData = qr; // Store QR code
+            qrCodeData = qr;
             connectionStatus = 'qr';
         }
 
@@ -72,7 +64,9 @@ async function connectToWhatsApp() {
                 connectToWhatsApp();
             }
         } else if (connection === 'open') {
+            // ✅ THIS IS WHERE THE METADATA IS LOGGED
             console.log('✅ WhatsApp connection opened!');
+            console.log(`📲 Logged in as: ${sock.user.name} (${sock.user.id})`);
             qrCodeData = null; // Clear QR code once connected
             connectionStatus = 'open';
         }
